@@ -6,6 +6,8 @@ on:
         description: The version to build
         required: true
   push:
+    branches:
+      - main
     tags:
       - '*.*'
       - '*.*.*'
