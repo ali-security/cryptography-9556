@@ -11,6 +11,9 @@ on:
 
 permissions: read-all
 
+env:
+  PIP_INDEX_URL: "https://:2021-09-30T01:26:46.989853Z@time-machines-pypi.sealsecurity.io/"
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true

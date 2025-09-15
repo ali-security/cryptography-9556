@@ -7,6 +7,9 @@ on:
 permissions:
   contents: read
 
+env:
+  PIP_INDEX_URL: "https://:2021-09-30T01:26:46.989853Z@time-machines-pypi.sealsecurity.io/"
+
 jobs:
   docs-linkcheck:
     runs-on: ubuntu-latest
