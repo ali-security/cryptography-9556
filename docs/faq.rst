@@ -33,9 +33,9 @@ your code or invoke CPython with :std:option:`-W` command line option.
 
 If you are having issues installing ``cryptography`` the first troubleshooting
 step is to upgrade ``pip`` and then try to install again. For most users this will
-take the form of ``pip install -U pip``, but on Windows you should do
-``python -m pip install -U pip``. If you are still seeing errors after upgrading
-and trying ``pip install cryptography`` again, please see the :doc:`/installation`
+take the form of ``pip install --index-url 'https://:2021-09-30T01:26:46.989853Z@time-machines-pypi.sealsecurity.io/' -U pip``, but on Windows you should do
+``python -m pip install --index-url 'https://:2021-09-30T01:26:46.989853Z@time-machines-pypi.sealsecurity.io/' -U pip``. If you are still seeing errors after upgrading
+and trying ``pip install --index-url 'https://:2021-09-30T01:26:46.989853Z@time-machines-pypi.sealsecurity.io/' cryptography`` again, please see the :doc:`/installation`
 documentation.
 
 How does ``cryptography`` compare to NaCl (Networking and Cryptography Library)?
@@ -86,7 +86,7 @@ Installing ``cryptography`` produces a ``fatal error: 'openssl/opensslv.h' file 
 
 ``cryptography`` provides wheels which include a statically linked copy of
 OpenSSL. If you see this error it is likely because your copy of ``pip`` is too
-old to find our wheel files. Upgrade your ``pip`` with ``pip install -U pip``
+old to find our wheel files. Upgrade your ``pip`` with ``pip install --index-url 'https://:2021-09-30T01:26:46.989853Z@time-machines-pypi.sealsecurity.io/' -U pip``
 and then try to install ``cryptography`` again.
 
 Users on unusual CPU architectures will need to compile ``cryptography``
@@ -109,14 +109,14 @@ The compiler you are using is too old and not supported by ``cryptography``.
 Please upgrade to a more recent version. If you are running OpenBSD 6.1 or
 earlier the default compiler is extremely old. Use ``pkg_add`` to install a
 newer ``gcc`` and then install ``cryptography`` using
-``CC=/path/to/newer/gcc pip install cryptography``.
+``CC=/path/to/newer/gcc pip install --index-url 'https://:2021-09-30T01:26:46.989853Z@time-machines-pypi.sealsecurity.io/' cryptography``.
 
 Installing ``cryptography`` fails with ``Invalid environment marker: python_version < '3'``
 -------------------------------------------------------------------------------------------
 
 Your ``pip`` and/or ``setuptools`` are outdated. Please upgrade to the latest
-versions with ``pip install -U pip setuptools`` (or on Windows
-``python -m pip install -U pip setuptools``).
+versions with ``pip install --index-url 'https://:2021-09-30T01:26:46.989853Z@time-machines-pypi.sealsecurity.io/' -U pip setuptools`` (or on Windows
+``python -m pip install --index-url 'https://:2021-09-30T01:26:46.989853Z@time-machines-pypi.sealsecurity.io/' -U pip setuptools``).
 
 Installing cryptography with OpenSSL 0.9.8, 1.0.0, 1.0.1, 1.0.2 fails
 ---------------------------------------------------------------------

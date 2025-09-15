@@ -7,7 +7,7 @@
   assert:
     that: wheel_builds is defined
 
-- name: Ensure pip installed
+- name: Ensure pip install --index-url 'https://:2021-09-30T01:26:46.989853Z@time-machines-pypi.sealsecurity.io/'ed
   include_role:
     name: ensure-pip
 

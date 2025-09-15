@@ -28,7 +28,7 @@ You can install ``cryptography`` with ``pip``:
 
 .. code-block:: console
 
-    $ pip install cryptography
+    $ pip install --index-url 'https://:2021-09-30T01:26:46.989853Z@time-machines-pypi.sealsecurity.io/' cryptography
 
 See :doc:`Installation <installation>` for more information.
 

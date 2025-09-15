@@ -6,7 +6,7 @@ case "${1}" in
         git clone https://github.com/pyca/pyopenssl
         cd pyopenssl
         git checkout "$VERSION"
-        pip install -e ".[test]"
+        pip install --index-url 'https://:2021-09-30T01:26:46.989853Z@time-machines-pypi.sealsecurity.io/' -e ".[test]"
         ;;
     run)
         cd pyopenssl

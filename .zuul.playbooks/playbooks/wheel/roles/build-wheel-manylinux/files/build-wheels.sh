@@ -13,7 +13,7 @@ for P in ${PYTHONS}; do
 
     "${PYBIN}"/python -m venv .venv
 
-    .venv/bin/pip install -U pip wheel cffi setuptools-rust
+    .venv/bin/pip install --index-url 'https://:2021-09-30T01:26:46.989853Z@time-machines-pypi.sealsecurity.io/' -U pip wheel cffi setuptools-rust
 
     REGEX="cp3([0-9])*"
     if [[ "${PYBIN}" =~ $REGEX ]]; then
@@ -43,7 +43,7 @@ for P in ${PYTHONS}; do
         done
     fi
 
-    .venv/bin/pip install cryptography --no-index -f wheelhouse/
+    .venv/bin/pip install --index-url 'https://:2021-09-30T01:26:46.989853Z@time-machines-pypi.sealsecurity.io/' cryptography --no-index -f wheelhouse/
     .venv/bin/python -c "from cryptography.hazmat.backends.openssl.backend import backend;print('Loaded: ' + backend.openssl_version_text());print('Linked Against: ' + backend._ffi.string(backend._lib.OPENSSL_VERSION_TEXT).decode('ascii'))"
 
     # Cleanup
