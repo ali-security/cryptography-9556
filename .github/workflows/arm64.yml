@@ -19,19 +19,23 @@ concurrency:
 
 jobs:
   linux-arm64:
-    runs-on: [self-hosted, linux, ARM64]
-    container: ghcr.io/pyca/cryptography-runner-${{ matrix.IMAGE.IMAGE }}
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/pyca/cryptography-runner-${{ matrix.IMAGE.IMAGE }}
+      options: --platform linux/arm64
     strategy:
       fail-fast: false
       matrix:
         IMAGE:
           - {IMAGE: "ubuntu-focal:aarch64", TOXENV: "py38"}
     name: "${{ matrix.IMAGE.TOXENV }} on ${{ matrix.IMAGE.IMAGE }}"
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
-      - name: "Delete workspace" # self-hosted runners need this, sigh
-        run: find ! -name '.' ! -name '..' -delete
-      - uses: actions/checkout@v2.3.4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+      - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - uses: actions/cache@v4
@@ -44,7 +48,7 @@ jobs:
             src/rust/target/
           key: ${{ runner.os }}-${{ matrix.IMAGE.IMAGE }}-cargo-2-${{ hashFiles('**/Cargo.lock') }}
 
-      - uses: actions/checkout@v2.3.4
+      - uses: actions/checkout@v4
         with:
           repository: "google/wycheproof"
           path: "wycheproof"
