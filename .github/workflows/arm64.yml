@@ -1,12 +1,6 @@
 name: Arm64 CI
 on:
-  push:
-    branches:
-      - main
-      - '*.*.x'
-    tags:
-      - '*.*'
-      - '*.*.*'
+  workflow_dispatch:
 
 permissions: read-all
 
