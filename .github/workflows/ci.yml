@@ -161,6 +161,12 @@ jobs:
           echo "OPENSSL_FORCE_FIPS_MODE=1" >> $GITHUB_ENV
           echo "CFLAGS=-DUSE_OSRANDOM_RNG_FOR_TESTING" >> $GITHUB_ENV
         if: matrix.IMAGE.FIPS
+      - run: python3 -m ensurepip || true
+      - run: apt update && apt install -y python3-pip || true
+      - run: apk add python3-pip || true
+      - run: dnf update && dnf install -y python3-pip || true
+      - run: yum update && yum install -y python3-pip || true
+      - run: microdnf update && microdnf install -y python3-pip || true
       - run: python3 -m pip install tox coverage pip wheel cffi setuptools-rust
       - run: 'tox -- --wycheproof-root="wycheproof"'
         env:
