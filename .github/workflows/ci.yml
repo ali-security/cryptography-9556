@@ -169,7 +169,10 @@ jobs:
       - run: dnf update && dnf install -y python3-pip || true
       - run: yum update && yum install -y python3-pip || true
       - run: microdnf update && microdnf install -y python3-pip || true
-      - run: python3 -m pip install tox coverage pip wheel cffi setuptools-rust
+      - run: apt install -y python3-coverage python3-wheel python3-cffi python3-setuptools-rust || true
+      - run: apt install -y python3-tox || true
+      - run: apt install -y tox || true
+      - run: python3 -m pip install tox coverage pip wheel cffi setuptools-rust || true
       - run: 'tox -- --wycheproof-root="wycheproof"'
         env:
           TOXENV: ${{ matrix.IMAGE.TOXENV }}
