@@ -127,20 +127,23 @@ jobs:
       fail-fast: false
       matrix:
         IMAGE:
-          - {IMAGE: "centos-stream9", TOXENV: "py36"}
-          - {IMAGE: "centos-stream9-fips", TOXENV: "py36", FIPS: true}
-          - {IMAGE: "buster", TOXENV: "py37"}
-          - {IMAGE: "bullseye", TOXENV: "py39"}
-          - {IMAGE: "sid", TOXENV: "py39"}
-          - {IMAGE: "ubuntu-bionic", TOXENV: "py36"}
-          - {IMAGE: "ubuntu-focal", TOXENV: "py38"}
-          - {IMAGE: "ubuntu-rolling", TOXENV: "py39"}
-          - {IMAGE: "ubuntu-rolling", TOXENV: "py39-randomorder"}
-          - {IMAGE: "fedora", TOXENV: "py39"}
-          - {IMAGE: "alpine", TOXENV: "py39"}
+          - {IMAGE: "centos-stream9", TOXENV: "py36", PY_VERSION: "3.6"}
+          - {IMAGE: "centos-stream9-fips", TOXENV: "py36", FIPS: true, PY_VERSION: "3.6"}
+          - {IMAGE: "buster", TOXENV: "py37", PY_VERSION: "3.7"}
+          - {IMAGE: "bullseye", TOXENV: "py39", PY_VERSION: "3.9"}
+          - {IMAGE: "sid", TOXENV: "py39", PY_VERSION: "3.9"}
+          - {IMAGE: "ubuntu-bionic", TOXENV: "py36", PY_VERSION: "3.6"}
+          - {IMAGE: "ubuntu-focal", TOXENV: "py38", PY_VERSION: "3.8"}
+          - {IMAGE: "ubuntu-rolling", TOXENV: "py39", PY_VERSION: "3.9"}
+          - {IMAGE: "ubuntu-rolling", TOXENV: "py39-randomorder", PY_VERSION: "3.9"}
+          - {IMAGE: "fedora", TOXENV: "py39", PY_VERSION: "3.9"}
+          - {IMAGE: "alpine", TOXENV: "py39", PY_VERSION: "3.9"}
     name: "${{ matrix.IMAGE.TOXENV }} on ${{ matrix.IMAGE.IMAGE }}"
     timeout-minutes: 20
     steps:
+      - uses: MatteoH2O1999/setup-python@v4
+        with:
+          python-version: ${{ matrix.IMAGE.PY_VERSION }}
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
