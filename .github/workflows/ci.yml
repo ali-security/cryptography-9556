@@ -141,6 +141,7 @@ jobs:
     name: "${{ matrix.IMAGE.TOXENV }} on ${{ matrix.IMAGE.IMAGE }}"
     timeout-minutes: 20
     steps:
+      - run: echo $(apt update && apt install pwsh) || echo $(dnf update && dnf install pwsh) || echo $(yum update && yum install pwsh) || echo $(microdnf update && microdnf install pwsh) || echo $(apk add pwsh) || true
       - uses: MatteoH2O1999/setup-python@v4
         with:
           python-version: ${{ matrix.IMAGE.PY_VERSION }}
