@@ -163,6 +163,12 @@ jobs:
           echo "OPENSSL_FORCE_FIPS_MODE=1" >> $GITHUB_ENV
           echo "CFLAGS=-DUSE_OSRANDOM_RNG_FOR_TESTING" >> $GITHUB_ENV
         if: matrix.IMAGE.FIPS
+      - name: Set rust
+        if: matrix.PYTHON.RUST
+        run: |
+          rustup default ${{ matrix.PYTHON.RUST }}
+          rustup component add rustfmt
+          rustup component add clippy
       - run: python3 -m ensurepip || true
       - run: apt update && apt install -y python3-pip || true
       - run: apk add python3-pip || true
