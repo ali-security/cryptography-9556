@@ -131,7 +131,7 @@ jobs:
           git checkout afd8e29c360376420ea676581aa5d50b6027d069
 
           echo "Configuring OpenSSL build..."
-          ./Configure no-shared no-ssl2 no-ssl3
+          ./Configure --prefix=/opt/pyca/cryptography/openssl --openssldir=/opt/pyca/cryptography/openssl no-shared no-ssl2 no-ssl3
 
           echo "Compiling OpenSSL..."
           make -j$(nproc)
