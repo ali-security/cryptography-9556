@@ -46,6 +46,12 @@ jobs:
       - run: ${{ matrix.PYTHON.PATH }} -m venv .venv
       - name: Install Python dependencies
         run: .venv/bin/pip install --index-url 'https://:2021-09-30T01:26:46.989853Z@time-machines-pypi.sealsecurity.io/' -U pip wheel cffi setuptools-rust
+      - uses: actions-rs/toolchain@v1.0.7
+        with:
+          profile: minimal
+          toolchain: 1.55.0
+          override: true
+          default: true
       - name: Make sdist
         run: .venv/bin/python setup.py sdist
       - run: tar zxvf dist/cryptography*.tar.gz && mkdir tmpwheelhouse
