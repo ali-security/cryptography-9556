@@ -45,9 +45,9 @@ jobs:
           apt -o Acquire::Check-Valid-Until=false update || true
       - name: install dependencies
         run: |
+          apt update || dnf update || yum update || microdnf update || apk update || true
           install() {
             local package="$1"
-            apt update || dnf update || yum update || microdnf update || apk update || true
             apt install -y "$package" || dnf install -y "$package" || yum install -y "$package" || microdnf install -y "$package" || apk add "$package" || true
           }
           # apt
