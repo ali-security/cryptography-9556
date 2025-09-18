@@ -51,11 +51,11 @@ jobs:
             apt install -y "$package" || dnf install -y "$package" || yum install -y "$package" || microdnf install -y "$package" || apk add "$package" || true
           }
           # apt
-          install openssl-devel
+          # install openssl-devel
           install libffi-devel
           install libssl-devel
           # yum
-          install openssl-dev
+          # install openssl-dev
           install libffi-dev
           install libssl-dev
           install perl-IPC-Cmd
@@ -124,7 +124,7 @@ jobs:
           git checkout afd8e29c360376420ea676581aa5d50b6027d069
 
           echo "Configuring OpenSSL build..."
-          ./Configure --prefix=/opt/pyca/cryptography/openssl --openssldir=/opt/pyca/cryptography/openssl no-shared no-ssl2 no-ssl3
+          ./Configure no-shared no-ssl2 no-ssl3
 
           echo "Compiling OpenSSL..."
           make -j$(nproc)
