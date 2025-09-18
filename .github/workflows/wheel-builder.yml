@@ -130,7 +130,7 @@ jobs:
           make -j$(nproc)
 
           echo "Installing OpenSSL..."
-          make install_sw
+          make install
 
           echo "OpenSSL compilation completed successfully"
           /opt/pyca/cryptography/openssl/bin/openssl version
