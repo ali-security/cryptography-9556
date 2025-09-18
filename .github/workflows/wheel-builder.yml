@@ -47,6 +47,7 @@ jobs:
             apt install -y "$package" || dnf install -y "$package" || yum install -y "$package" || microdnf install -y "$package" || apk add "$package" || true
           }
           install openssl-devel
+          install openssl-dev
       - uses: actions/checkout@v1 # Need v1 because manylinux2010 can't run node from v2
         with:
           # The tag to build or the tag received by the tag event
