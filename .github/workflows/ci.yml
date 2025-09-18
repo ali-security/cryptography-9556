@@ -157,9 +157,7 @@ jobs:
           install python3-wheel
           install python3-cffi
           install python3-setuptools-rust
-      - uses: MatteoH2O1999/setup-python@v4
-        with:
-          python-version: ${{ matrix.IMAGE.PY_VERSION }}
+          install python${{ matrix.IMAGE.PY_VERSION }}
       - uses: actions/checkout@v4
         with:
           persist-credentials: false

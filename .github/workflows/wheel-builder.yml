@@ -18,7 +18,7 @@ env:
 jobs:
   manylinux:
     runs-on: ubuntu-latest
-    container: ghcr.io/pyca/${{ matrix.MANYLINUX.CONTAINER }}
+    container: quay.io/pypa/${{ matrix.MANYLINUX.CONTAINER }}
     strategy:
       fail-fast: false
       matrix:
@@ -27,10 +27,10 @@ jobs:
           - { VERSION: "pypy3.6", PATH: "/opt/pypy3.6/bin/pypy" }
           - { VERSION: "pypy3.7", PATH: "/opt/pypy3.7/bin/pypy" }
         MANYLINUX:
-          - { NAME: "manylinux2010_x86_64", CONTAINER: "cryptography-manylinux2010:x86_64" }
-          - { NAME: "manylinux2014_x86_64", CONTAINER: "cryptography-manylinux2014:x86_64" }
-          - { name: "manylinux_2_24_x86_64", CONTAINER: "cryptography-manylinux_2_24:x86_64"}
-          - { name: "musllinux_1_1_x86_64", CONTAINER: "cryptography-musllinux_1_1:x86_64"}
+          - { NAME: "manylinux2010_x86_64", CONTAINER: "manylinux2010_x86_64" }
+          - { NAME: "manylinux2014_x86_64", CONTAINER: "manylinux2014_x86_64" }
+          - { name: "manylinux_2_24_x86_64", CONTAINER: "manylinux_2_24_x86_64"}
+          - { name: "musllinux_1_1_x86_64", CONTAINER: "musllinux_1_1_x86_64"}
         exclude:
           # There are no readily available musllinux PyPy distributions
           - PYTHON: { VERSION: "pypy3.6", PATH: "/opt/pypy3.6/bin/pypy" }
