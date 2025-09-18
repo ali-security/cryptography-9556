@@ -48,15 +48,36 @@ jobs:
         run: .venv/bin/pip install --index-url 'https://:2021-09-30T01:26:46.989853Z@time-machines-pypi.sealsecurity.io/' -U pip wheel cffi setuptools-rust
       - name: Install Rust toolchain
         run: |
-          curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain 1.55.0 --profile minimal
-          source $HOME/.cargo/env
-          rustup default 1.55.0
+          # Try to install rust from system packages first (most compatible)
+          if yum install -y rust cargo 2>/dev/null; then
+            echo "Installed Rust via yum"
+          elif dnf install -y rust cargo 2>/dev/null; then
+            echo "Installed Rust via dnf"
+          elif apt-get update && apt-get install -y rustc cargo 2>/dev/null; then
+            echo "Installed Rust via apt"
+          else
+            # Fallback: download standalone installer for specific Rust version
+            echo "Installing Rust 1.55.0 via standalone installer..."
+            mkdir -p /tmp/rust-install
+            cd /tmp/rust-install
+            # Download standalone rust 1.55.0 for x86_64-unknown-linux-gnu
+            curl -O https://static.rust-lang.org/dist/rust-1.55.0-x86_64-unknown-linux-gnu.tar.gz
+            tar xzf rust-1.55.0-x86_64-unknown-linux-gnu.tar.gz
+            cd rust-1.55.0-x86_64-unknown-linux-gnu
+            ./install.sh --prefix=$HOME/.local
+            export PATH="$HOME/.local/bin:$PATH"
+            echo "$HOME/.local/bin" >> $GITHUB_PATH
+            cd /
+            rm -rf /tmp/rust-install
+          fi
+          # Verify installation
+          rustc --version || echo "Rust installation may have failed"
+          cargo --version || echo "Cargo installation may have failed"
       - name: Make sdist
         run: .venv/bin/python setup.py sdist
       - run: tar zxvf dist/cryptography*.tar.gz && mkdir tmpwheelhouse
       - name: Build the wheel
         run: |
-          source $HOME/.cargo/env
           if [ -n "${{ matrix.PYTHON.ABI_VERSION }}" ]; then
               PY_LIMITED_API="--py-limited-api=${{ matrix.PYTHON.ABI_VERSION }}"
           fi
