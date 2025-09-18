@@ -167,7 +167,7 @@ jobs:
 
       # Use curl-based upload for manylinux2010, regular action for others
       - name: Upload artifact using curl (manylinux2010 compatibility)
-        if: matrix.MANYLINUX.NAME == 'manylinux2010_x86_64' && always()
+        if: always()
         run: |
           # Create a tarball of the artifacts
           cd cryptography-wheelhouse
