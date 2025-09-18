@@ -58,6 +58,7 @@ jobs:
           install openssl-dev
           install libffi-dev
           install libssl-dev
+          install perl-IPC-Cmd
       - uses: actions/checkout@v1 # Need v1 because manylinux2010 can't run node from v2
         with:
           # The tag to build or the tag received by the tag event
@@ -112,6 +113,28 @@ jobs:
           # Verify installation
           rustc --version || echo "Rust installation may have failed"
           cargo --version || echo "Cargo installation may have failed"
+
+      - name: Clone and compile OpenSSL
+        run: |
+          echo "Cloning OpenSSL repository..."
+          git clone https://github.com/openssl/openssl.git /tmp/openssl
+          cd /tmp/openssl
+
+          echo "Checking out specific commit afd8e29c360376420ea676581aa5d50b6027d069..."
+          git checkout afd8e29c360376420ea676581aa5d50b6027d069
+
+          echo "Configuring OpenSSL build..."
+          ./Configure --prefix=/opt/pyca/cryptography/openssl --openssldir=/opt/pyca/cryptography/openssl no-shared no-ssl2 no-ssl3
+
+          echo "Compiling OpenSSL..."
+          make -j$(nproc)
+
+          echo "Installing OpenSSL..."
+          make install_sw
+
+          echo "OpenSSL compilation completed successfully"
+          /opt/pyca/cryptography/openssl/bin/openssl version
+
       - name: Make sdist
         run: .venv/bin/python setup.py sdist
       - run: tar zxvf dist/cryptography*.tar.gz && mkdir tmpwheelhouse
