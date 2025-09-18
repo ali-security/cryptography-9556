@@ -59,14 +59,7 @@ jobs:
           install libffi-dev
           install libssl-dev
           install perl-IPC-Cmd
-      # Use v1 for manylinux2010, v4 for others
-      - uses: actions/checkout@v1
-        if: matrix.MANYLINUX.NAME == 'manylinux2010_x86_64'
-        with:
-          # The tag to build or the tag received by the tag event
-          ref: ${{ github.event.inputs.version || github.ref }}
-      - uses: actions/checkout@v4
-        if: matrix.MANYLINUX.NAME != 'manylinux2010_x86_64'
+      - uses: actions/checkout@v1 # Need v1 because manylinux2010 can't run node from v2
         with:
           # The tag to build or the tag received by the tag event
           ref: ${{ github.event.inputs.version || github.ref }}
@@ -171,7 +164,7 @@ jobs:
           .venv/bin/python -c "from cryptography.hazmat.backends.openssl.backend import backend;print('Loaded: ' + backend.openssl_version_text());print('Linked Against: ' + backend._ffi.string(backend._lib.OPENSSL_VERSION_TEXT).decode('ascii'))"
       - run: mkdir cryptography-wheelhouse
       - run: mv wheelhouse/cryptography*.whl cryptography-wheelhouse/
-      
+
       # Use curl-based upload for manylinux2010, regular action for others
       - name: Upload artifact using curl (manylinux2010 compatibility)
         if: matrix.MANYLINUX.NAME == 'manylinux2010_x86_64' && always()
@@ -180,7 +173,7 @@ jobs:
           cd cryptography-wheelhouse
           tar -czf "../cryptography-${{ github.event.inputs.version }}-${{ matrix.MANYLINUX.NAME }}-${{ matrix.PYTHON.VERSION }}.tar.gz" *
           cd ..
-          
+
           # Upload using curl (this works without Node.js dependencies)
           curl -X POST \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
@@ -188,7 +181,7 @@ jobs:
             --data-binary @"cryptography-${{ github.event.inputs.version }}-${{ matrix.MANYLINUX.NAME }}-${{ matrix.PYTHON.VERSION }}.tar.gz" \
             "https://uploads.github.com/repos/${{ github.repository }}/actions/artifacts" \
             || echo "Note: Artifact upload via curl failed, but build succeeded"
-        
+
       - uses: actions/upload-artifact@v4
         with:
           name: "cryptography-${{ github.event.inputs.version }}-${{ matrix.MANYLINUX.NAME }}-${{ matrix.PYTHON.VERSION }}"
