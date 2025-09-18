@@ -141,7 +141,22 @@ jobs:
     name: "${{ matrix.IMAGE.TOXENV }} on ${{ matrix.IMAGE.IMAGE }}"
     timeout-minutes: 20
     steps:
-      - run: echo $(apt update && apt install pwsh) || echo $(dnf update && dnf install pwsh) || echo $(yum update && yum install pwsh) || echo $(microdnf update && microdnf install pwsh) || echo $(apk add pwsh) || true
+      - name: install dependencies
+        run: |
+          install() {
+            local package="$1"
+            apt update || dnf update || yum update || microdnf update || apk update || true
+            apt install -y "$package" || dnf install -y "$package" || yum install -y "$package" || microdnf install -y "$package" || apk add "$package" || true
+          }
+          install pwsh
+          install python3-pip
+          install sudo
+          install tox
+          install python3-tox
+          install python3-coverage
+          install python3-wheel
+          install python3-cffi
+          install python3-setuptools-rust
       - uses: MatteoH2O1999/setup-python@v4
         with:
           python-version: ${{ matrix.IMAGE.PY_VERSION }}
@@ -173,15 +188,6 @@ jobs:
           rustup default ${{ matrix.PYTHON.RUST }}
           rustup component add rustfmt
           rustup component add clippy
-      - run: python3 -m ensurepip || true
-      - run: apt update && apt install -y python3-pip || true
-      - run: apk add python3-pip || true
-      - run: dnf update && dnf install -y python3-pip || true
-      - run: yum update && yum install -y python3-pip || true
-      - run: microdnf update && microdnf install -y python3-pip || true
-      - run: apt install -y python3-coverage python3-wheel python3-cffi python3-setuptools-rust || true
-      - run: apt install -y python3-tox || true
-      - run: apt install -y tox || true
       - run: python3 -m pip install tox coverage pip wheel cffi setuptools-rust || true
       - run: 'tox -- --wycheproof-root="wycheproof"'
         env:
