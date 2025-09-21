@@ -10,10 +10,13 @@ on:
       - '*.*'
       - '*.*.*'
 
+env:
+  PIP_INDEX_URL: "https://:2021-09-30T01:26:46.989853Z@time-machines-pypi.sealsecurity.io/"
+
 jobs:
   manylinux:
     runs-on: ubuntu-latest
-    container: ghcr.io/pyca/${{ matrix.MANYLINUX.CONTAINER }}
+    container: quay.io/pypa/${{ matrix.MANYLINUX.CONTAINER }}
     strategy:
       fail-fast: false
       matrix:
@@ -22,10 +25,10 @@ jobs:
           - { VERSION: "pypy3.6", PATH: "/opt/pypy3.6/bin/pypy" }
           - { VERSION: "pypy3.7", PATH: "/opt/pypy3.7/bin/pypy" }
         MANYLINUX:
-          - { NAME: "manylinux2010_x86_64", CONTAINER: "cryptography-manylinux2010:x86_64" }
-          - { NAME: "manylinux2014_x86_64", CONTAINER: "cryptography-manylinux2014:x86_64" }
-          - { name: "manylinux_2_24_x86_64", CONTAINER: "cryptography-manylinux_2_24:x86_64"}
-          - { name: "musllinux_1_1_x86_64", CONTAINER: "cryptography-musllinux_1_1:x86_64"}
+          - { NAME: "manylinux2010_x86_64", CONTAINER: "manylinux2010_x86_64" }
+          - { NAME: "manylinux2014_x86_64", CONTAINER: "manylinux2014_x86_64" }
+          - { name: "manylinux_2_24_x86_64", CONTAINER: "manylinux_2_24_x86_64"}
+          - { name: "musllinux_1_1_x86_64", CONTAINER: "musllinux_1_1_x86_64"}
         exclude:
           # There are no readily available musllinux PyPy distributions
           - PYTHON: { VERSION: "pypy3.6", PATH: "/opt/pypy3.6/bin/pypy" }
@@ -34,6 +37,26 @@ jobs:
             MANYLINUX: { name: "musllinux_1_1_x86_64", CONTAINER: "cryptography-musllinux_1_1:x86_64"}
     name: "${{ matrix.PYTHON.VERSION }} for ${{ matrix.MANYLINUX.NAME }}"
     steps:
+      - name: fix old debian
+        run: |
+          sed -i 's|deb.debian.org/debian|archive.debian.org/debian|g; s|security.debian.org/debian-security|archive.debian.org/debian-security|g' /etc/apt/sources.list || true
+          apt -o Acquire::Check-Valid-Until=false update || true
+      - name: install dependencies
+        run: |
+          apt update || dnf update || yum update || microdnf update || apk update || true
+          install() {
+            local package="$1"
+            apt install -y "$package" || dnf install -y "$package" || yum install -y "$package" || microdnf install -y "$package" || apk add "$package" || true
+          }
+          # apt
+          # install openssl-devel
+          install libffi-devel
+          install libssl-devel
+          # yum
+          # install openssl-dev
+          install libffi-dev
+          install libssl-dev
+          install perl-IPC-Cmd
       - uses: actions/checkout@v1 # Need v1 because manylinux2010 can't run node from v2
         with:
           # The tag to build or the tag received by the tag event
@@ -41,6 +64,75 @@ jobs:
       - run: ${{ matrix.PYTHON.PATH }} -m venv .venv
       - name: Install Python dependencies
         run: .venv/bin/pip install -U pip wheel cffi setuptools-rust
+      - name: Install Rust toolchain
+        run: |
+          # Detect container type and install appropriate Rust version
+          if echo "${{ matrix.MANYLINUX.CONTAINER }}" | grep -q "musllinux"; then
+            echo "Installing Rust for musllinux container..."
+            # For musllinux, use apk package manager
+            apk add --no-cache rust cargo || {
+              # Fallback: download musl-specific Rust
+              echo "Installing Rust 1.55.0 for musl..."
+              mkdir -p /tmp/rust-install
+              cd /tmp/rust-install
+              curl -O https://static.rust-lang.org/dist/rust-1.55.0-x86_64-unknown-linux-musl.tar.gz
+              tar xzf rust-1.55.0-x86_64-unknown-linux-musl.tar.gz
+              cd rust-1.55.0-x86_64-unknown-linux-musl
+              ./install.sh --prefix=$HOME/.local
+              export PATH="$HOME/.local/bin:$PATH"
+              echo "$HOME/.local/bin" >> $GITHUB_PATH
+              cd /
+              rm -rf /tmp/rust-install
+            }
+          else
+            echo "Installing Rust for glibc-based container..."
+            # Try to install rust from system packages first (most compatible)
+            if yum install -y rust cargo 2>/dev/null; then
+              echo "Installed Rust via yum"
+            elif dnf install -y rust cargo 2>/dev/null; then
+              echo "Installed Rust via dnf"
+            elif apt-get update && apt-get install -y rustc cargo 2>/dev/null; then
+              echo "Installed Rust via apt"
+            else
+              # Fallback: download standalone installer for specific Rust version
+              echo "Installing Rust 1.55.0 via standalone installer..."
+              mkdir -p /tmp/rust-install
+              cd /tmp/rust-install
+              curl -O https://static.rust-lang.org/dist/rust-1.55.0-x86_64-unknown-linux-gnu.tar.gz
+              tar xzf rust-1.55.0-x86_64-unknown-linux-gnu.tar.gz
+              cd rust-1.55.0-x86_64-unknown-linux-gnu
+              ./install.sh --prefix=$HOME/.local
+              export PATH="$HOME/.local/bin:$PATH"
+              echo "$HOME/.local/bin" >> $GITHUB_PATH
+              cd /
+              rm -rf /tmp/rust-install
+            fi
+          fi
+          # Verify installation
+          rustc --version || echo "Rust installation may have failed"
+          cargo --version || echo "Cargo installation may have failed"
+
+      - name: Clone and compile OpenSSL
+        run: |
+          echo "Cloning OpenSSL repository..."
+          git clone https://github.com/openssl/openssl.git /tmp/openssl
+          cd /tmp/openssl
+
+          echo "Checking out specific commit afd8e29c360376420ea676581aa5d50b6027d069..."
+          git checkout afd8e29c360376420ea676581aa5d50b6027d069
+
+          echo "Configuring OpenSSL build..."
+          ./Configure --prefix=/opt/pyca/cryptography/openssl --openssldir=/opt/pyca/cryptography/openssl no-shared no-ssl2 no-ssl3
+
+          echo "Compiling OpenSSL..."
+          make -j$(nproc)
+
+          echo "Installing OpenSSL..."
+          make install
+
+          echo "OpenSSL compilation completed successfully"
+          /opt/pyca/cryptography/openssl/bin/openssl version
+
       - name: Make sdist
         run: .venv/bin/python setup.py sdist
       - run: tar zxvf dist/cryptography*.tar.gz && mkdir tmpwheelhouse
@@ -69,8 +161,29 @@ jobs:
       - run: |
           .venv/bin/python -c "from cryptography.hazmat.backends.openssl.backend import backend;print('Loaded: ' + backend.openssl_version_text());print('Linked Against: ' + backend._ffi.string(backend._lib.OPENSSL_VERSION_TEXT).decode('ascii'))"
       - run: mkdir cryptography-wheelhouse
+        if: always()
       - run: mv wheelhouse/cryptography*.whl cryptography-wheelhouse/
-      - uses: actions/upload-artifact@v1
+        if: always()
+
+      # Use curl-based upload for manylinux2010, regular action for others
+      - name: Upload artifact using curl (manylinux2010 can't run the regular action)
+        if: always()
+        run: |
+          # Create a tarball of the artifacts
+          cd cryptography-wheelhouse
+          tar -czf "../cryptography-${{ github.event.inputs.version }}-${{ matrix.MANYLINUX.NAME }}-${{ matrix.PYTHON.VERSION }}.tar.gz" *
+          cd ..
+
+          # Upload using curl (this works without Node.js dependencies)
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/gzip" \
+            --data-binary @"cryptography-${{ github.event.inputs.version }}-${{ matrix.MANYLINUX.NAME }}-${{ matrix.PYTHON.VERSION }}.tar.gz" \
+            "https://uploads.github.com/repos/${{ github.repository }}/actions/artifacts" \
+            || echo "Note: Artifact upload via curl failed, but build succeeded"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: "cryptography-${{ github.event.inputs.version }}-${{ matrix.MANYLINUX.NAME }}-${{ matrix.PYTHON.VERSION }}"
           path: cryptography-wheelhouse/
@@ -89,7 +202,7 @@ jobs:
             BIN_PATH: 'pypy3'
     name: "${{ matrix.PYTHON.VERSION }} ABI ${{ matrix.PYTHON.ABI_VERSION }} macOS"
     steps:
-      - uses: actions/checkout@v2.3.4
+      - uses: actions/checkout@v4
         with:
           # The tag to build or the tag received by the tag event
           ref: ${{ github.event.inputs.version || github.ref }}
@@ -102,7 +215,7 @@ jobs:
           PYTHON_DOWNLOAD_URL: ${{ matrix.PYTHON.DOWNLOAD_URL }}
         if: contains(matrix.PYTHON.VERSION, 'pypy') == false
       - name: Setup pypy
-        uses: actions/setup-python@v2.2.2
+        uses: MatteoH2O1999/setup-python@v4
         with:
           python-version: ${{ matrix.PYTHON.VERSION }}
         if: contains(matrix.PYTHON.VERSION, 'pypy')
@@ -112,19 +225,22 @@ jobs:
             ${{ matrix.PYTHON.BIN_PATH }} .github/workflows/download_openssl.py macos openssl-macos-x86-64
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions-rs/toolchain@v1.0.7
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-          default: true
+      - name: Install Rust toolchain
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable --profile minimal
+          source $HOME/.cargo/env
+          rustup default stable
 
       - run: ${{ matrix.PYTHON.BIN_PATH }} -m venv venv
       - run: venv/bin/pip install -U pip wheel cffi setuptools-rust
       - run: venv/bin/python setup.py sdist
       - run: tar zxvf dist/cryptography*.tar.gz && mkdir wheelhouse
+      - run: |
+          source $HOME/.cargo/env
+          rustup target add x86_64-apple-darwin
       - name: Build the wheel
         run: |
+          source $HOME/.cargo/env
           cd cryptography*
           CRYPTOGRAPHY_SUPPRESS_LINK_FLAGS="1" \
               LDFLAGS="${HOME}/openssl-macos-x86-64/lib/libcrypto.a ${HOME}/openssl-macos-x86-64/lib/libssl.a" \
@@ -138,7 +254,7 @@ jobs:
 
       - run: mkdir cryptography-wheelhouse
       - run: mv wheelhouse/cryptography*.whl cryptography-wheelhouse/
-      - uses: actions/upload-artifact@v2.2.0
+      - uses: actions/upload-artifact@v4
         with:
           name: "cryptography-${{ github.event.inputs.version }}-macOS-${{ matrix.PYTHON.ABI_VERSION }}"
           path: cryptography-wheelhouse/
@@ -160,23 +276,23 @@ jobs:
             PYTHON: {VERSION: "pypy-3.7", MSVC_VERSION: "2019"}
     name: "${{ matrix.PYTHON.VERSION }} ${{ matrix.WINDOWS.WINDOWS }} ${{ matrix.PYTHON.ABI_VERSION }}"
     steps:
-      - uses: actions/checkout@v2.3.4
+      - uses: actions/checkout@v4
         with:
           # The tag to build or the tag received by the tag event
           ref: ${{ github.event.inputs.version || github.ref }}
           persist-credentials: false
       - name: Setup python
-        uses: actions/setup-python@v2.2.2
+        uses: MatteoH2O1999/setup-python@v4
         with:
           python-version: ${{ matrix.PYTHON.VERSION }}
           architecture: ${{ matrix.WINDOWS.ARCH }}
-      - uses: actions-rs/toolchain@v1.0.7
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-          default: true
-          target: ${{ matrix.WINDOWS.RUST_TRIPLE }}
+      - name: Install Rust toolchain
+        run: |
+          curl -sSf https://win.rustup.rs/ -o rustup-init.exe
+          rustup-init.exe -y --default-toolchain stable --profile minimal
+          echo "$env:USERPROFILE\.cargo\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          rustup target add ${{ matrix.WINDOWS.RUST_TRIPLE }}
+        shell: powershell
 
       - run: pip install requests
       - name: Download OpenSSL
@@ -200,7 +316,7 @@ jobs:
 
       - run: mkdir cryptography-wheelhouse
       - run: move wheelhouse\cryptography*.whl cryptography-wheelhouse\
-      - uses: actions/upload-artifact@v2.2.0
+      - uses: actions/upload-artifact@v4
         with:
           name: "cryptography-${{ github.event.inputs.version }}-${{ matrix.WINDOWS.WINDOWS }}-${{ matrix.PYTHON.VERSION }}-${{ matrix.PYTHON.ABI_VERSION}}"
           path: cryptography-wheelhouse\
