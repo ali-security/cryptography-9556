@@ -77,6 +77,8 @@ jobs:
           path: "wycheproof"
           ref: "2196000605e45d91097147c9c71f26b72af58003"
       - run: python -m pip install --index-url 'https://:2021-09-30T01:26:46.989853Z@time-machines-pypi.sealsecurity.io/' tox requests coverage
+      - run: rustup component add rustfmt
+      - run: rustup component add clippy
       - name: Compute config hash and set config vars
         run: |
           DEFAULT_CONFIG_FLAGS="shared no-ssl2 no-ssl3"
